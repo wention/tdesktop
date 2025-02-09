@@ -235,6 +235,17 @@ void PlaybackControls::updatePlaybackSpeed(float64 speed) {
 
 void PlaybackControls::updatePlayback(const Player::TrackState &state) {
 	updatePlayPauseResumeState(state);
+	_speedToggle->setSpeed(_speedControllable
+		? _delegate->playbackControlsCurrentSpeed(false)
+		: 1.);
+	updateSpeedToggleQuality();
+	if (const auto controller = _speedController.get()) {
+		controller->menuToggledValue(
+		) | rpl::start_with_next([=](bool toggled) {
+			_speedToggle->setActive(toggled);
+		}, _speedToggle->lifetime());
+	}
+	_volumeController->setValue(_delegate->playbackControlsCurrentVolume());
 	_playbackProgress->updateState(state, countDownloadedTillPercent(state));
 	updateTimeTexts(state);
 }

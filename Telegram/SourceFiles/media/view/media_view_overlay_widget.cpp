@@ -5420,23 +5420,60 @@ void OverlayWidget::handleKeyPress(not_null<QKeyEvent*> e) {
 		} else if (key == Qt::Key_Space) {
 			playbackPauseResume();
 			return;
+		} else if (key == Qt::Key_0) {
+			activateControls();
+			restartAtSeekPosition(0);
+			return;
+		} else if (key >= Qt::Key_1 && key <= Qt::Key_9) {
+			activateControls();
+			const auto index = int(key - Qt::Key_0);
+			restartAtProgress(index / 10.0);
+			return;
+		} else if (key == Qt::Key_Left) {
+			activateControls();
+			seekRelativeTime(-10 * crl::time(1000));
+			return;
+		} else if (key == Qt::Key_Right) {
+			activateControls();
+			seekRelativeTime(10 * crl::time(1000));
+			return;
+		} else if (key == Qt::Key_Up) {
+			auto vol = playbackControlsCurrentVolume() + 0.1;
+			vol = vol > 1.0 ? 1.0 : vol;
+			playbackControlsVolumeChanged(vol);
+			updatePlaybackState();
+			activateControls();
+			return;
+		} else if (key == Qt::Key_Down) {
+			auto vol = playbackControlsCurrentVolume() - 0.1;
+			vol = vol < 0. ? 0. : vol;
+			playbackControlsVolumeChanged(vol);
+			updatePlaybackState();
+			activateControls();
+			return;
+		} else if (key == Qt::Key_BracketLeft) {
+			auto spd = playbackControlsCurrentSpeed(false) - 0.1;
+			spd = spd < kSpeedMin ? kSpeedMin : spd;
+			playbackControlsSpeedChanged(spd);
+			updatePlaybackState();
+			activateControls();
+			return;
+		} else if (key == Qt::Key_BracketRight) {
+			auto spd = playbackControlsCurrentSpeed(false) + 0.1;
+			spd = spd > kSpeedMax ? kSpeedMax : spd;
+			playbackControlsSpeedChanged(spd);
+			updatePlaybackState();
+			activateControls();
+			return;
+		} else if (key == Qt::Key_Equal) {
+			playbackControlsSpeedChanged(1.0);
+			updatePlaybackState();
+			activateControls();
+			return;
 		} else if (_fullScreenVideo) {
 			if (key == Qt::Key_Escape) {
 				playbackToggleFullScreen();
 			} else if (ctrl) {
-			} else if (key == Qt::Key_0) {
-				activateControls();
-				restartAtSeekPosition(0);
-			} else if (key >= Qt::Key_1 && key <= Qt::Key_9) {
-				activateControls();
-				const auto index = int(key - Qt::Key_0);
-				restartAtProgress(index / 10.0);
-			} else if (key == Qt::Key_Left) {
-				activateControls();
-				seekRelativeTime(-kSeekTimeMs);
-			} else if (key == Qt::Key_Right) {
-				activateControls();
-				seekRelativeTime(kSeekTimeMs);
 			}
 			return;
 		}
@@ -5518,16 +5555,24 @@ void OverlayWidget::handleWheelEvent(not_null<QWheelEvent*> e) {
 		if (_verticalWheelDelta < 0) {
 			_verticalWheelDelta += step;
 			if (e->modifiers().testFlag(Qt::ControlModifier)) {
+				if (acceptForJump)
+					moveToNext(1);
+			} else if (e->modifiers().testFlag(Qt::ShiftModifier)) {
 				zoomOut();
-			} else if (acceptForJump) {
-				moveToNext(1);
+			} else {
+				activateControls();
+				seekRelativeTime(kSeekTimeMs);
 			}
 		} else {
 			_verticalWheelDelta -= step;
 			if (e->modifiers().testFlag(Qt::ControlModifier)) {
+				if (acceptForJump)
+					moveToNext(-1);
+			} else if (e->modifiers().testFlag(Qt::ShiftModifier)) {
 				zoomIn();
-			} else if (acceptForJump) {
-				moveToNext(-1);
+			} else {
+				activateControls();
+				seekRelativeTime(-kSeekTimeMs);
 			}
 		}
 	}
